@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="hero">
+    <h1>ChainProof</h1>
+
+    <p class="lead">
+        Secure Verification of Digital Forensic Evidence
+    </p>
+
+    <hr>
+
+    <p>
+        Verify evidence integrity using
+        SHA-256 hashing,
+        RSA digital signatures,
+        and PKI certificates.
+    </p>
+
+    <a href="/upload" class="btn btn-primary">
+        Upload Evidence
+    </a>
+
+    <a href="/verify" class="btn btn-success">
+        Verify Evidence
+    </a>
+</div>
+
+{% endblock %}
