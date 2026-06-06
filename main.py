@@ -2,6 +2,8 @@ import os
 from flask import Flask, render_template, request
 from werkzeug.utils import secure_filename
 from app.hashing import generate_sha256
+from app.key_manager import generate_user_keys
+from app.user_manager import register_user
 
 app = Flask(__name__)
 
@@ -13,6 +15,37 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 @app.route("/")
 def index():
     return render_template("index.html")
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        if not username or not password:
+            return render_template("register.html", error="Please enter username and password.")
+
+        private_key_path, public_key_path = generate_user_keys(username)
+
+        user_created = register_user(
+            username,
+            password,
+            private_key_path,
+            public_key_path
+        )
+
+        if not user_created:
+            return render_template("register.html", error="User already exists.")
+
+        return render_template(
+            "register.html",
+            success=True,
+            username=username,
+            private_key=private_key_path,
+            public_key=public_key_path
+        )
+
+    return render_template("register.html")
 
 @app.route("/upload", methods=["GET", "POST"])
 def upload():

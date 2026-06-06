@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Register User</h2>
+
+<form method="POST">
+    <div class="mb-3">
+        <label class="form-label">Username</label>
+        <input class="form-control" type="text" name="username" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input class="form-control" type="password" name="password" required>
+    </div>
+
+    <button class="btn btn-primary" type="submit">
+        Register and Generate Keys
+    </button>
+</form>
+
+{% if success %}
+<div class="alert alert-success mt-4">
+    <h5>User Registered Successfully</h5>
+    <p><strong>Username:</strong> {{ username }}</p>
+    <p><strong>Private Key:</strong> {{ private_key }}</p>
+    <p><strong>Public Key:</strong> {{ public_key }}</p>
+</div>
+{% endif %}
+
+{% if error %}
+<div class="alert alert-danger mt-4">
+    {{ error }}
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,7 @@
+{
+    "testuser": {
+        "password_hash": "scrypt:32768:8:1$7hKzu2Qk9cJJrsJ5$f1f6f50375d70d66193789499cffff28e16d6c5f68ac5ad54fa04ec8fd6461f5499c4ba7296b642f48602b8d2b4e3dbb578b9801102a329bb646844dbd989975",
+        "private_key": "keys\\testuser_private.pem",
+        "public_key": "keys\\testuser_public.pem"
+    }
+}
