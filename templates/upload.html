@@ -4,14 +4,30 @@
 
 <h2>Upload Evidence</h2>
 
-<form>
+<form method="POST" enctype="multipart/form-data">
     <div class="mb-3">
-        <input class="form-control" type="file">
+        <input class="form-control" type="file" name="evidence_file">
     </div>
 
-    <button class="btn btn-primary">
-        Upload
+    <button class="btn btn-primary" type="submit">
+        Upload and Generate Hash
     </button>
 </form>
+
+{% if filename %}
+<hr>
+<div class="alert alert-success mt-4">
+    <h5>Evidence Uploaded Successfully</h5>
+    <p><strong>Filename:</strong> {{ filename }}</p>
+    <p><strong>SHA-256 Hash:</strong></p>
+    <code>{{ file_hash }}</code>
+</div>
+{% endif %}
+
+{% if error %}
+<div class="alert alert-danger mt-4">
+    {{ error }}
+</div>
+{% endif %}
 
 {% endblock %}
