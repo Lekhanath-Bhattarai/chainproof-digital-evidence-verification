@@ -11,3 +11,6 @@ evidence/*
 !keys/.gitkeep
 !certificates/.gitkeep
 !evidence/.gitkeep
+
+signatures/*
+!signatures/.gitkeep

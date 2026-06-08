@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 from app.hashing import generate_sha256
 from app.key_manager import generate_user_keys
 from app.user_manager import register_user
+from app.signing import sign_file
 
 app = Flask(__name__)
 
@@ -51,9 +52,13 @@ def register():
 def upload():
     if request.method == "POST":
         file = request.files.get("evidence_file")
+        username = request.form.get("username")
 
         if not file or file.filename == "":
             return render_template("upload.html", error="Please select a file.")
+
+        if not username:
+            return render_template("upload.html", error="Please enter the username of the signer.")
 
         filename = secure_filename(file.filename)
         file_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
@@ -62,10 +67,22 @@ def upload():
 
         file_hash = generate_sha256(file_path)
 
+        private_key_path = os.path.join("keys", f"{username}_private.pem")
+
+        if not os.path.exists(private_key_path):
+            return render_template(
+                "upload.html",
+                error=f"No private key found for user '{username}'. Please register the user first."
+            )
+
+        signature_path = sign_file(file_path, private_key_path)
+
         return render_template(
             "upload.html",
             filename=filename,
-            file_hash=file_hash
+            file_hash=file_hash,
+            signature_path=signature_path,
+            username=username
         )
 
     return render_template("upload.html")

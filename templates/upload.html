@@ -2,25 +2,39 @@
 
 {% block content %}
 
-<h2>Upload Evidence</h2>
+<h2>Upload and Sign Evidence</h2>
 
 <form method="POST" enctype="multipart/form-data">
+
     <div class="mb-3">
-        <input class="form-control" type="file" name="evidence_file">
+        <label class="form-label">Signer Username</label>
+        <input class="form-control" type="text" name="username" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Evidence File</label>
+        <input class="form-control" type="file" name="evidence_file" required>
     </div>
 
     <button class="btn btn-primary" type="submit">
-        Upload and Generate Hash
+        Upload, Hash and Sign Evidence
     </button>
 </form>
 
 {% if filename %}
 <hr>
 <div class="alert alert-success mt-4">
-    <h5>Evidence Uploaded Successfully</h5>
+    <h5>Evidence Uploaded and Signed Successfully</h5>
+
+    <p><strong>Signer:</strong> {{ username }}</p>
+
     <p><strong>Filename:</strong> {{ filename }}</p>
+
     <p><strong>SHA-256 Hash:</strong></p>
     <code>{{ file_hash }}</code>
+
+    <p class="mt-3"><strong>Signature File:</strong></p>
+    <code>{{ signature_path }}</code>
 </div>
 {% endif %}
 
