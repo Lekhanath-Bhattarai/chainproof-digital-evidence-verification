@@ -4,18 +4,49 @@
 
 <h2>Verify Evidence</h2>
 
-<p>
-    Upload signed evidence for verification.
-</p>
+<form method="POST" enctype="multipart/form-data">
 
-<form>
     <div class="mb-3">
-        <input class="form-control" type="file">
+        <label class="form-label">Signer Username</label>
+        <input class="form-control" type="text" name="username" required>
     </div>
 
-    <button class="btn btn-success">
-        Verify
+    <div class="mb-3">
+        <label class="form-label">Evidence File</label>
+        <input class="form-control" type="file" name="evidence_file" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Signature File</label>
+        <input class="form-control" type="file" name="signature_file" required>
+    </div>
+
+    <button class="btn btn-success" type="submit">
+        Verify Signature
     </button>
 </form>
+
+{% if is_valid is not none %}
+<hr>
+{% if is_valid %}
+<div class="alert alert-success mt-4">
+    <h5>Signature Valid</h5>
+    <p>Evidence is authentic and has not been modified.</p>
+    <p><strong>Signer:</strong> {{ username }}</p>
+</div>
+{% else %}
+<div class="alert alert-danger mt-4">
+    <h5>Signature Invalid</h5>
+    <p>Evidence may have been tampered with or the signature is forged.</p>
+    <p><strong>Signer:</strong> {{ username }}</p>
+</div>
+{% endif %}
+{% endif %}
+
+{% if error %}
+<div class="alert alert-danger mt-4">
+    {{ error }}
+</div>
+{% endif %}
 
 {% endblock %}
