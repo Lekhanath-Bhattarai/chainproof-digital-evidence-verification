@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 from app.hashing import generate_sha256
 from app.key_manager import generate_user_keys
 from app.certificate_manager import issue_user_certificate
-from app.user_manager import register_user, authenticate_user, get_user
+from app.user_manager import (register_user, authenticate_user, get_user, revoke_certificate, delete_user)
 from app.signing import sign_file
 from app.verification import verify_signature, validate_certificate
 from app.evidence_manager import add_record, load_records
@@ -262,6 +262,36 @@ def admin():
         logs=logs
     )
 
+@app.route("/revoke/<username>")
+def revoke_user_certificate(username):
+    if session.get("role") != "admin":
+        return redirect(url_for("login"))
+
+    if revoke_certificate(username):
+        add_log(
+            session["username"],
+            "Certificate Revoked",
+            f"Certificate for user '{username}' was revoked"
+        )
+
+    return redirect(url_for("admin"))
+
+@app.route("/delete-user/<username>")
+def delete_user_route(username):
+    if session.get("role") != "admin":
+        return redirect(url_for("login"))
+
+    if username == session.get("username"):
+        return redirect(url_for("admin"))
+
+    if delete_user(username):
+        add_log(
+            session["username"],
+            "User Deleted",
+            f"User '{username}' was deleted by admin"
+        )
+
+    return redirect(url_for("admin"))
 
 if __name__ == "__main__":
     app.run(debug=True)

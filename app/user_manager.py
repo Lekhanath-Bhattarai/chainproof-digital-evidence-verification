@@ -53,3 +53,24 @@ def authenticate_user(username, password):
 def get_user(username):
     users = load_users()
     return users.get(username)
+
+def revoke_certificate(username):
+    users = load_users()
+
+    if username not in users:
+        return False
+
+    users[username]["certificate_status"] = "revoked"
+
+    save_users(users)
+    return True
+
+def delete_user(username):
+    users = load_users()
+
+    if username not in users:
+        return False
+
+    del users[username]
+    save_users(users)
+    return True

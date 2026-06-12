@@ -4,7 +4,7 @@
 
 <h2>Admin Dashboard</h2>
 
-<p class="text-muted">System overview and user management.</p>
+<p class="text-muted">System overview, certificate management, and user management.</p>
 
 <div class="row mt-4">
     <div class="col-md-3"><div class="card p-3"><h5>Users</h5><h3>{{ stats.users }}</h3></div></div>
@@ -23,14 +23,49 @@
             <th>Username</th>
             <th>Role</th>
             <th>Public Key</th>
+            <th>Certificate</th>
+            <th>Certificate Status</th>
+            <th>Actions</th>
         </tr>
     </thead>
+
     <tbody>
         {% for username, data in users.items() %}
         <tr>
             <td>{{ username }}</td>
             <td>{{ data.role }}</td>
             <td>{{ data.public_key }}</td>
+            <td>{{ data.certificate }}</td>
+
+            <td>
+                {% if data.certificate_status == "valid" %}
+                    <span class="badge bg-success">Valid</span>
+                {% else %}
+                    <span class="badge bg-danger">Revoked</span>
+                {% endif %}
+            </td>
+
+            <td>
+                {% if data.certificate_status == "valid" %}
+                    <a href="/revoke/{{ username }}" class="btn btn-sm btn-warning">
+                        Revoke Certificate
+                    </a>
+                {% else %}
+                    <button class="btn btn-sm btn-secondary" disabled>
+                        Already Revoked
+                    </button>
+                {% endif %}
+
+                {% if username != session.get("username") %}
+                    <a href="/delete-user/{{ username }}" class="btn btn-sm btn-outline-danger mt-1">
+                        Delete User
+                    </a>
+                {% else %}
+                    <button class="btn btn-sm btn-outline-secondary mt-1" disabled>
+                        Current Admin
+                    </button>
+                {% endif %}
+            </td>
         </tr>
         {% endfor %}
     </tbody>
