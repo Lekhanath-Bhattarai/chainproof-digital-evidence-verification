@@ -4,12 +4,11 @@
 
 <h2>Upload and Sign Evidence</h2>
 
-<form method="POST" enctype="multipart/form-data">
+<p class="text-muted">
+    Signed in as: <strong>{{ session.get("username") }}</strong>
+</p>
 
-    <div class="mb-3">
-        <label class="form-label">Signer Username</label>
-        <input class="form-control" type="text" name="username" required>
-    </div>
+<form method="POST" enctype="multipart/form-data">
 
     <div class="mb-3">
         <label class="form-label">Evidence File</label>
@@ -27,7 +26,6 @@
     <h5>Evidence Uploaded and Signed Successfully</h5>
 
     <p><strong>Signer:</strong> {{ username }}</p>
-
     <p><strong>Filename:</strong> {{ filename }}</p>
 
     <p><strong>SHA-256 Hash:</strong></p>

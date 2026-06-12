@@ -1,6 +1,7 @@
 import json
 import os
 from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 USER_FILE = "data/users.json"
 
@@ -31,3 +32,13 @@ def register_user(username, password, private_key_path, public_key_path):
 
     save_users(users)
     return True
+
+def authenticate_user(username, password):
+    users = load_users()
+
+    if username not in users:
+        return False
+
+    stored_hash = users[username]["password_hash"]
+
+    return check_password_hash(stored_hash, password)

@@ -1,22 +1,26 @@
 import os
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session, redirect, url_for
 from werkzeug.utils import secure_filename
 from app.hashing import generate_sha256
 from app.key_manager import generate_user_keys
-from app.user_manager import register_user
+from app.user_manager import register_user, authenticate_user
 from app.signing import sign_file
 from app.verification import verify_signature
 
 app = Flask(__name__)
+app.secret_key = "chainproof_dev_secret_key"
 
 UPLOAD_FOLDER = "evidence"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs("signatures", exist_ok=True)
+
 
 @app.route("/")
 def index():
     return render_template("index.html")
+
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -49,17 +53,40 @@ def register():
 
     return render_template("register.html")
 
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        if authenticate_user(username, password):
+            session["username"] = username
+            return redirect(url_for("index"))
+
+        return render_template("login.html", error="Invalid username or password.")
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("index"))
+
+
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+
     if request.method == "POST":
         file = request.files.get("evidence_file")
-        username = request.form.get("username")
 
         if not file or file.filename == "":
             return render_template("upload.html", error="Please select a file.")
-
-        if not username:
-            return render_template("upload.html", error="Please enter the username of the signer.")
 
         filename = secure_filename(file.filename)
         file_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
@@ -86,24 +113,36 @@ def upload():
             username=username
         )
 
-    return render_template("upload.html")
+    return render_template("upload.html", username=username)
+
 
 @app.route("/verify", methods=["GET", "POST"])
 def verify():
+    if "username" not in session:
+        return redirect(url_for("login"))
+
     if request.method == "POST":
         username = request.form.get("username")
         evidence_file = request.files.get("evidence_file")
         signature_file = request.files.get("signature_file")
 
         if not username or not evidence_file or not signature_file:
-            return render_template("verify.html", error="Please provide username, evidence file, and signature file.")
+            return render_template(
+                "verify.html",
+                error="Please provide username, evidence file, and signature file.",
+                is_valid=None
+            )
 
         evidence_path = os.path.join("evidence", secure_filename(evidence_file.filename))
         signature_path = os.path.join("signatures", secure_filename(signature_file.filename))
         public_key_path = os.path.join("keys", f"{username}_public.pem")
 
         if not os.path.exists(public_key_path):
-            return render_template("verify.html", error=f"No public key found for user '{username}'.")
+            return render_template(
+                "verify.html",
+                error=f"No public key found for user '{username}'.",
+                is_valid=None
+            )
 
         evidence_file.save(evidence_path)
         signature_file.save(signature_path)
@@ -117,5 +156,7 @@ def verify():
         )
 
     return render_template("verify.html", is_valid=None)
+
+
 if __name__ == "__main__":
     app.run(debug=True)
