@@ -3,7 +3,7 @@ from flask import Flask, render_template, request, session, redirect, url_for
 from werkzeug.utils import secure_filename
 from app.hashing import generate_sha256
 from app.key_manager import generate_user_keys
-from app.user_manager import register_user, authenticate_user
+from app.user_manager import register_user, authenticate_user, get_user
 from app.signing import sign_file
 from app.verification import verify_signature
 
@@ -61,7 +61,14 @@ def login():
         password = request.form.get("password")
 
         if authenticate_user(username, password):
+            user = get_user(username)
+
             session["username"] = username
+            session["role"] = user.get("role", "user")
+
+            if session["role"] == "admin":
+                return redirect(url_for("admin"))
+
             return redirect(url_for("index"))
 
         return render_template("login.html", error="Invalid username or password.")
@@ -156,6 +163,25 @@ def verify():
         )
 
     return render_template("verify.html", is_valid=None)
+
+
+@app.route("/admin")
+def admin():
+    if session.get("role") != "admin":
+        return redirect(url_for("login"))
+
+    from app.user_manager import load_users
+    users = load_users()
+
+    stats = {
+        "users": len(users),
+        "evidence": len(os.listdir("evidence")) if os.path.exists("evidence") else 0,
+        "signatures": len(os.listdir("signatures")) if os.path.exists("signatures") else 0,
+        "keys": len(os.listdir("keys")) if os.path.exists("keys") else 0,
+        "certificates": len(os.listdir("certificates")) if os.path.exists("certificates") else 0
+    }
+
+    return render_template("admin.html", users=users, stats=stats)
 
 
 if __name__ == "__main__":
