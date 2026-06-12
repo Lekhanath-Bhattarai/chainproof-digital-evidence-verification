@@ -4,9 +4,10 @@ from werkzeug.utils import secure_filename
 
 from app.hashing import generate_sha256
 from app.key_manager import generate_user_keys
+from app.certificate_manager import issue_user_certificate
 from app.user_manager import register_user, authenticate_user, get_user
 from app.signing import sign_file
-from app.verification import verify_signature
+from app.verification import verify_signature, validate_certificate
 from app.evidence_manager import add_record, load_records
 from app.audit_logger import add_log, load_logs
 
@@ -38,25 +39,28 @@ def register():
             return render_template("register.html", error="Please enter username and password.")
 
         private_key_path, public_key_path = generate_user_keys(username)
+        certificate_path = issue_user_certificate(username, public_key_path)
 
         user_created = register_user(
             username,
             password,
             private_key_path,
-            public_key_path
+            public_key_path,
+            certificate_path
         )
 
         if not user_created:
             return render_template("register.html", error="User already exists.")
-        
-        add_log(username, "User Registration", "New user registered and RSA keys generated")
+
+        add_log(username, "User Registration", "New user registered, RSA keys generated, and X.509 certificate issued")
 
         return render_template(
             "register.html",
             success=True,
             username=username,
             private_key=private_key_path,
-            public_key=public_key_path
+            public_key=public_key_path,
+            certificate=certificate_path
         )
 
     return render_template("register.html")
@@ -125,12 +129,7 @@ def upload():
 
         signature_path = sign_file(file_path, private_key_path)
 
-        add_record(
-            username,
-            filename,
-            file_hash,
-            signature_path
-        )
+        add_record(username, filename, file_hash, signature_path)
 
         add_log(username, "Evidence Signed", f"Evidence '{filename}' uploaded, hashed, and signed")
 
@@ -151,42 +150,86 @@ def verify():
         return redirect(url_for("login"))
 
     if request.method == "POST":
-        username = request.form.get("username")
+        signer_username = request.form.get("username")
         evidence_file = request.files.get("evidence_file")
         signature_file = request.files.get("signature_file")
 
-        if not username or not evidence_file or not signature_file:
+        if not signer_username or not evidence_file or not signature_file:
             return render_template(
                 "verify.html",
-                error="Please provide username, evidence file, and signature file.",
+                error="Please provide signer username, evidence file, and signature file.",
+                is_valid=None
+            )
+
+        signer = get_user(signer_username)
+
+        if not signer:
+            return render_template(
+                "verify.html",
+                error="Signer user not found.",
+                is_valid=None
+            )
+
+        certificate_path = signer.get("certificate")
+        certificate_status = signer.get("certificate_status", "valid")
+        ca_certificate_path = os.path.join("certificates", "chainproof_ca.crt")
+
+        if not certificate_path or not os.path.exists(certificate_path):
+            return render_template(
+                "verify.html",
+                error="Signer certificate not found.",
+                is_valid=None
+            )
+
+        if not os.path.exists(ca_certificate_path):
+            return render_template(
+                "verify.html",
+                error="ChainProof CA certificate not found.",
                 is_valid=None
             )
 
         evidence_path = os.path.join("evidence", secure_filename(evidence_file.filename))
         signature_path = os.path.join("signatures", secure_filename(signature_file.filename))
-        public_key_path = os.path.join("keys", f"{username}_public.pem")
-
-        if not os.path.exists(public_key_path):
-            return render_template(
-                "verify.html",
-                error=f"No public key found for user '{username}'.",
-                is_valid=None
-            )
 
         evidence_file.save(evidence_path)
         signature_file.save(signature_path)
 
-        is_valid = verify_signature(evidence_path, signature_path, public_key_path)
+        certificate_valid, certificate_message = validate_certificate(
+            certificate_path,
+            ca_certificate_path,
+            certificate_status
+        )
+
+        if not certificate_valid:
+            add_log(
+                signer_username,
+                "Certificate Validation Failed",
+                certificate_message
+            )
+
+            return render_template(
+                "verify.html",
+                username=signer_username,
+                is_valid=False,
+                certificate_error=certificate_message
+            )
+
+        is_valid = verify_signature(
+            evidence_path,
+            signature_path,
+            certificate_path
+        )
 
         if is_valid:
-            add_log(username, "Verification Success", "Evidence signature verified successfully")
+            add_log(signer_username, "Verification Success", "Evidence signature and certificate verified successfully")
         else:
-            add_log(username, "Verification Failed", "Evidence may be tampered or signature is invalid")
+            add_log(signer_username, "Verification Failed", "Evidence may be tampered or signature is invalid")
 
         return render_template(
             "verify.html",
-            username=username,
-            is_valid=is_valid
+            username=signer_username,
+            is_valid=is_valid,
+            certificate_message=certificate_message
         )
 
     return render_template("verify.html", is_valid=None)

@@ -20,7 +20,7 @@ def save_users(users):
         json.dump(users, file, indent=4)
 
 
-def register_user(username, password, private_key_path, public_key_path):
+def register_user(username, password, private_key_path, public_key_path, certificate_path):
     users = load_users()
 
     if username in users:
@@ -30,7 +30,9 @@ def register_user(username, password, private_key_path, public_key_path):
         "password_hash": generate_password_hash(password),
         "role": "user",
         "private_key": private_key_path,
-        "public_key": public_key_path
+        "public_key": public_key_path,
+        "certificate": certificate_path,
+        "certificate_status": "valid"
     }
 
     save_users(users)

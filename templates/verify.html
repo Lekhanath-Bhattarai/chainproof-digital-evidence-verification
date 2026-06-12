@@ -22,28 +22,37 @@
     </div>
 
     <button class="btn btn-success" type="submit">
-        Verify Signature
+        Verify Evidence
     </button>
 </form>
 
-{% if is_valid is not none %}
+{% if certificate_error %}
+<hr>
+<div class="alert alert-warning mt-4">
+    <h5>Certificate Validation Failed</h5>
+    <p>{{ certificate_error }}</p>
+    <p><strong>Signer:</strong> {{ username }}</p>
+</div>
+{% endif %}
+
+{% if is_valid is not none and not certificate_error %}
 <hr>
 {% if is_valid %}
 <div class="alert alert-success mt-4">
-    <h5>Signature Valid</h5>
-    <p>Evidence is authentic and has not been modified.</p>
+    <h5>Verification Successful</h5>
+    <p>Evidence is authentic, unchanged, and signed by a trusted certificate.</p>
     <p><strong>Signer:</strong> {{ username }}</p>
 </div>
 {% else %}
 <div class="alert alert-danger mt-4">
-    <h5>Signature Invalid</h5>
+    <h5>Signature Verification Failed</h5>
     <p>Evidence may have been tampered with or the signature is forged.</p>
     <p><strong>Signer:</strong> {{ username }}</p>
 </div>
 {% endif %}
 {% endif %}
 
-{% if error %}
+{% if error and not certificate_error %}
 <div class="alert alert-danger mt-4">
     {{ error }}
 </div>
