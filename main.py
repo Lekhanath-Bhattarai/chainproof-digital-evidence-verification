@@ -1,11 +1,13 @@
 import os
 from flask import Flask, render_template, request, session, redirect, url_for
 from werkzeug.utils import secure_filename
+
 from app.hashing import generate_sha256
 from app.key_manager import generate_user_keys
 from app.user_manager import register_user, authenticate_user, get_user
 from app.signing import sign_file
 from app.verification import verify_signature
+from app.evidence_manager import add_record, load_records
 
 app = Flask(__name__)
 app.secret_key = "chainproof_dev_secret_key"
@@ -13,8 +15,11 @@ app.secret_key = "chainproof_dev_secret_key"
 UPLOAD_FOLDER = "evidence"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs("data", exist_ok=True)
+os.makedirs("evidence", exist_ok=True)
 os.makedirs("signatures", exist_ok=True)
+os.makedirs("keys", exist_ok=True)
+os.makedirs("certificates", exist_ok=True)
 
 
 @app.route("/")
@@ -112,6 +117,13 @@ def upload():
 
         signature_path = sign_file(file_path, private_key_path)
 
+        add_record(
+            username,
+            filename,
+            file_hash,
+            signature_path
+        )
+
         return render_template(
             "upload.html",
             filename=filename,
@@ -171,7 +183,9 @@ def admin():
         return redirect(url_for("login"))
 
     from app.user_manager import load_users
+
     users = load_users()
+    records = load_records()
 
     stats = {
         "users": len(users),
@@ -181,7 +195,12 @@ def admin():
         "certificates": len(os.listdir("certificates")) if os.path.exists("certificates") else 0
     }
 
-    return render_template("admin.html", users=users, stats=stats)
+    return render_template(
+        "admin.html",
+        users=users,
+        stats=stats,
+        records=records
+    )
 
 
 if __name__ == "__main__":

@@ -1,0 +1,9 @@
+[
+    {
+        "username": "test",
+        "filename": "testfile.txt",
+        "hash": "c6e21005f2e9658476a073b0bf41e8c2a0de56ed5e067db731978f273e25070a",
+        "signature": "signatures\\testfile.txt.sig",
+        "timestamp": "2026-06-12 18:34:28"
+    }
+]
