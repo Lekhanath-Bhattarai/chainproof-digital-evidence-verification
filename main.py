@@ -8,6 +8,7 @@ from app.user_manager import register_user, authenticate_user, get_user
 from app.signing import sign_file
 from app.verification import verify_signature
 from app.evidence_manager import add_record, load_records
+from app.audit_logger import add_log, load_logs
 
 app = Flask(__name__)
 app.secret_key = "chainproof_dev_secret_key"
@@ -47,6 +48,8 @@ def register():
 
         if not user_created:
             return render_template("register.html", error="User already exists.")
+        
+        add_log(username, "User Registration", "New user registered and RSA keys generated")
 
         return render_template(
             "register.html",
@@ -71,6 +74,8 @@ def login():
             session["username"] = username
             session["role"] = user.get("role", "user")
 
+            add_log(username, "Login", "User logged in successfully")
+
             if session["role"] == "admin":
                 return redirect(url_for("admin"))
 
@@ -83,6 +88,9 @@ def login():
 
 @app.route("/logout")
 def logout():
+    if session.get("username"):
+        add_log(session.get("username"), "Logout", "User logged out")
+
     session.clear()
     return redirect(url_for("index"))
 
@@ -123,6 +131,8 @@ def upload():
             file_hash,
             signature_path
         )
+
+        add_log(username, "Evidence Signed", f"Evidence '{filename}' uploaded, hashed, and signed")
 
         return render_template(
             "upload.html",
@@ -168,6 +178,11 @@ def verify():
 
         is_valid = verify_signature(evidence_path, signature_path, public_key_path)
 
+        if is_valid:
+            add_log(username, "Verification Success", "Evidence signature verified successfully")
+        else:
+            add_log(username, "Verification Failed", "Evidence may be tampered or signature is invalid")
+
         return render_template(
             "verify.html",
             username=username,
@@ -186,6 +201,7 @@ def admin():
 
     users = load_users()
     records = load_records()
+    logs = load_logs()
 
     stats = {
         "users": len(users),
@@ -199,7 +215,8 @@ def admin():
         "admin.html",
         users=users,
         stats=stats,
-        records=records
+        records=records,
+        logs=logs
     )
 
 

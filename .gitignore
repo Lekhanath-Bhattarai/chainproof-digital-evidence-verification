@@ -4,6 +4,7 @@ __pycache__/
 
 data/users.json
 data/evidence_records.json
+data/evidence_records.json
 
 keys/*
 certificates/*
