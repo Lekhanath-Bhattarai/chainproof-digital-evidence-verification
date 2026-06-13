@@ -10,6 +10,7 @@ from app.signing import sign_file
 from app.verification import verify_signature, validate_certificate
 from app.evidence_manager import add_record, load_records
 from app.audit_logger import add_log, load_logs
+from app.encryption_manager import encrypt_file
 
 app = Flask(__name__)
 app.secret_key = "chainproof_dev_secret_key"
@@ -128,6 +129,8 @@ def upload():
             )
 
         signature_path = sign_file(file_path, private_key_path)
+        encrypted_path = encrypt_file(file_path)
+        os.remove(file_path)
 
         add_record(username, filename, file_hash, signature_path)
 
@@ -138,6 +141,7 @@ def upload():
             filename=filename,
             file_hash=file_hash,
             signature_path=signature_path,
+            encrypted_path=encrypted_path,
             username=username
         )
 

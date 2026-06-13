@@ -17,3 +17,6 @@ evidence/*
 signatures/*
 !signatures/.gitkeep
 
+keys/storage_key.key
+temp_uploads/*
+!temp_uploads/.gitkeep
